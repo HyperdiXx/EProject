@@ -132,8 +132,17 @@ namespace EProject
         virtual void init(const WindowParameters& params) = 0;
         virtual void shutdown() = 0;
 
+        virtual FrameBufferPtr createFramebuffer() = 0;
+        virtual GPUTexture2DPtr createTexture2D() = 0;
+        virtual IndexBufferPtr createIndexBuffer() = 0;
+        virtual VertexBufferPtr createVertexBuffer() = 0;
+        virtual ShaderProgramPtr createShaderProgram() = 0;
+        virtual UniformBufferPtr createUniformBuffer() = 0;
+        virtual StructuredBufferPtr createStructuredBuffer() = 0;
+
         virtual GDeviceAPI* getDevicePtr() = 0;
         virtual GSamplerState* obtainSamplerState(const Sampler& s) = 0;
+        virtual GStates* getStates() = 0;
     private:
     };
 
@@ -484,26 +493,23 @@ namespace EProject
     public:
         UniformBuffer(const GDevicePtr& device);
         
-        void setState(const Layout* layout, int elemets_count, const void* data = nullptr);
-        void setSubData(int start_element, int num_elements, const void* data);
-        void setValue(const char* name, float v, int element_idx = 0);
-        void setValue(const char* name, int i, int element_idx = 0);
-        void setValue(const char* name, const glm::vec2& v, int element_idx = 0);
-        void setValue(const char* name, const glm::vec3& v, int element_idx = 0);
-        void setValue(const char* name, const glm::vec4& v, int element_idx = 0);
-        void setValue(const char* name, const glm::mat4& m, int element_idx = 0);
-        void validateDynamicData();
+        virtual void setState(const Layout* layout, int elemets_count, const void* data = nullptr);
+        virtual void setSubData(int start_element, int num_elements, const void* data);
+        virtual void setValue(const char* name, float v, int element_idx = 0);
+        virtual void setValue(const char* name, int i, int element_idx = 0);
+        virtual void setValue(const char* name, const glm::vec2& v, int element_idx = 0);
+        virtual void setValue(const char* name, const glm::vec3& v, int element_idx = 0);
+        virtual void setValue(const char* name, const glm::vec4& v, int element_idx = 0);
+        virtual void setValue(const char* name, const glm::mat4& m, int element_idx = 0);
+        virtual void validateDynamicData();
        
         const Layout* getLayout() const;
-        ComPtr<ID3D11Buffer> getHandle();
 
-    private:
+    protected:
         void setValue(void* dest, const void* data, int datasize);
         void* find(const char* name, int element_idx);
-
-    private:
+    protected:
         std::vector<char> m_data;
-        ComPtr<ID3D11Buffer> m_handle;
         const Layout* m_layout;
         int m_elements_count;
         bool m_dirty = false;

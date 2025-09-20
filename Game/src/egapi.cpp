@@ -443,39 +443,17 @@ namespace EProject
 
     GSamplerState* GDevice::obtainSampler(const Sampler& s)
     {        
-        /*auto it = m_samplers.find(s);
-        if (it == m_samplers.end())
-        {
-            
-        }
-
-        return it->second.Get();*/
-        return nullptr;
+        return m_device->obtainSamplerState(s);
     }
 
     glm::ivec2 GDevice::currentFrameBufferSize() const
     {
-        return m_lastWndSize;
+        return m_params.size;
     }
 
     std::shared_ptr<GDeviceAPI> GDevice::getDeviceImpl() const
     {
         return m_device;
-    }
-
-    /*ID3D11Device* GDevice::getDX11Device() const
-    {
-        return m_dev.Get();
-    }
-
-    ID3D11DeviceContext* GDevice::getDX11DeviceContext() const
-    {
-        return m_context.Get();
-    }*/
-
-    States* GDevice::getStates()
-    {
-        return m_states.get();
     }
 
     FrameBufferPtr GDevice::getActiveFrameBuffer() const
@@ -490,7 +468,8 @@ namespace EProject
 
     FrameBufferPtr GDevice::createFrameBuffer()
     {
-        return std::make_shared<Framebuffer>(shared_from_this());
+        return m_device->createFramebuffer();
+        //return std::make_shared<Framebuffer>(shared_from_this());
     }
 
     GPUTexture2DPtr GDevice::createTexture2D()
@@ -1100,7 +1079,7 @@ namespace EProject
 
     bool ShaderProgram::isProgramActive() const
     {
-        return  m_device->m_activeProgram == this;
+        return m_device->m_activeProgram == this;
     }
 
     ID3D11InputLayout* ShaderProgram::getLayout(const Layout* vertices, const Layout* instances, int step_rate)
@@ -1559,26 +1538,7 @@ namespace EProject
             memcpy(m_data.data(), data, m_data.size());
         }
 
-        D3D11_BUFFER_DESC desc = {};
-        desc.ByteWidth = UINT(m_data.size());
-        desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        desc.MiscFlags = 0;
-        desc.StructureByteStride = layout->stride;
-
-        if (data)
-        {
-            D3D11_SUBRESOURCE_DATA dxdata = {};
-            dxdata.pSysMem = data;
-            dxdata.SysMemPitch = desc.ByteWidth;
-            dxdata.SysMemSlicePitch = desc.ByteWidth;
-            getD3DErr(m_device->getDX11Device()->CreateBuffer(&desc, &dxdata, &m_handle));
-        }
-        else
-        {
-            getD3DErr(m_device->getDX11Device()->CreateBuffer(&desc, nullptr, &m_handle));
-        }
+        
         
         m_dirty = false;
     }
@@ -1652,20 +1612,12 @@ namespace EProject
         
         m_dirty = false;
 
-        D3D11_MAPPED_SUBRESOURCE map_res = {};
-        getD3DErr(m_device->getDX11DeviceContext()->Map(m_handle.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map_res));
-        memcpy(map_res.pData, m_data.data(), m_data.size());
-        m_device->getDX11DeviceContext()->Unmap(m_handle.Get(), 0);
+        
     }
 
     const Layout* UniformBuffer::getLayout() const
     {
-        return nullptr;
-    }
-
-    ComPtr<ID3D11Buffer> UniformBuffer::getHandle()
-    {
-        return m_handle;
+        return m_layout;
     }
 
     StructuredBuffer::StructuredBuffer(const GDevicePtr& device) : DeviceHolder(device)

@@ -329,6 +329,41 @@ namespace EProject
 
     }
 
+    FrameBufferPtr DX11GDevice::createFramebuffer()
+    {
+
+    }
+
+    GPUTexture2DPtr DX11GDevice::createTexture2D()
+    {
+
+    }
+
+    IndexBufferPtr DX11GDevice::createIndexBuffer()
+    {
+
+    }
+
+    VertexBufferPtr DX11GDevice::createVertexBuffer()
+    {
+
+    }
+
+    ShaderProgramPtr DX11GDevice::createShaderProgram()
+    {
+
+    }
+
+    UniformBufferPtr DX11GDevice::createUniformBuffer()
+    {
+        return std::make_shared<DX11GUniformBuffer>(shared_from_this());
+    }
+
+    StructuredBufferPtr DX11GDevice::createStructuredBuffer()
+    {
+
+    }
+
     GDeviceAPI* DX11GDevice::getDevicePtr()
     {
         return static_cast<DX11GDevice*>(this);
@@ -338,15 +373,15 @@ namespace EProject
     {
         D3D11_SAMPLER_DESC desc = {};
 
-        bool iscomparison = s.comparison != Compare::Never;
+        const bool isComparison = s.comparison != Compare::Never;
 
         if (s.anisotropy > 1)
         {
-            desc.Filter = iscomparison ? D3D11_FILTER_COMPARISON_ANISOTROPIC : D3D11_FILTER_ANISOTROPIC;
+            desc.Filter = isComparison ? D3D11_FILTER_COMPARISON_ANISOTROPIC : D3D11_FILTER_ANISOTROPIC;
         }
         else
         {
-            if (iscomparison)
+            if (isComparison)
             {
                 if (s.filter == TexFilter::Linear)
                 {
@@ -415,15 +450,207 @@ namespace EProject
         getD3DErr(m_dev->CreateSamplerState(&desc, &sampler));
         m_samplers.insert({ s, sampler });
 
-        //fix this
         return new DX11GSamplerState(sampler);
-        //return new GSamplerState();
     }
 
-    DX11GSamplerState::DX11GSamplerState(ComPtr<ID3D11SamplerState> ptr) : 
+    GStates* DX11GDevice::getStates()
+    {        
+        return m_states.get();
+    }
+
+    ID3D11Device* DX11GDevice::getDX11Device() const
+    {
+        return m_dev.Get();
+    }
+
+    ID3D11DeviceContext* DX11GDevice::getDX11DeviceContext() const
+    {
+        return m_context.Get();
+    }
+
+    DX11GSamplerState::DX11GSamplerState(ComPtr<ID3D11SamplerState> ptr) :
         m_state(ptr)
     {
 
+    }
+
+    DX11GShaderProgram::DX11GShaderProgram(const GDevicePtr& device) : ShaderProgram(device)
+    {
+
+    }
+
+    DX11GShaderProgram::~DX11GShaderProgram()
+    {
+
+    }
+
+    bool DX11GShaderProgram::compileFromFile(const ShaderInput& input)
+    {
+
+    }
+
+    bool DX11GShaderProgram::create()
+    {
+
+    }
+
+    void DX11GShaderProgram::activateProgram()
+    {
+
+    }
+
+    void DX11GShaderProgram::setInputBuffers(const VertexBufferPtr& vbo, const IndexBufferPtr& ibo, const VertexBufferPtr& instances, int instanceStepRate)
+    {
+
+    }
+
+    void DX11GShaderProgram::drawIndexed(PrimTopology pt, const DrawIndexedCmd& cmd)
+    {
+
+    }
+
+    void DX11GShaderProgram::drawIndexed(PrimTopology pt, const std::vector<DrawIndexedCmd>& cmd_buf)
+    {
+
+    }
+
+    void DX11GShaderProgram::drawIndexed(PrimTopology pt, int index_start = 0, int index_count = -1, int instance_count = -1, int base_vertex = 0, int base_instance = 0)
+    {
+
+    }
+
+    void DX11GShaderProgram::draw(PrimTopology pt, int vert_start = 0, int vert_count = -1, int instance_count = -1, int base_instance = 0)
+    {
+
+    }
+
+    void DX11GShaderProgram::setValue(const char* name, float v)
+    {
+
+    }
+
+    void DX11GShaderProgram::setValue(const char* name, int i)
+    {
+
+    }
+
+    void DX11GShaderProgram::setValue(const char* name, const glm::vec2& v)
+    {
+
+    }
+
+    void DX11GShaderProgram::setValue(const char* name, const glm::vec3& v)
+    {
+
+    }
+
+    void DX11GShaderProgram::setValue(const char* name, const glm::vec4& v)
+    {
+
+    }
+
+    void DX11GShaderProgram::setValue(const char* name, const glm::mat4& m)
+    {
+
+    }
+
+    void DX11GShaderProgram::setResource(const char* name, const UniformBufferPtr& ubo)
+    {
+
+    }
+
+    void DX11GShaderProgram::setResource(const char* name, const StructuredBufferPtr& sbo)
+    {
+
+    }
+
+    void DX11GShaderProgram::setResource(const char* name, const GPUTexture2DPtr& tex, bool as_array = false, bool as_cubemap = false)
+    {
+
+    }
+
+    //void setResource(const char* name, const Texture3DPtr& tex);
+    void DX11GShaderProgram::setResource(const char* name, const Sampler& s)
+    {
+
+    }    
+    
+    DX11GUniformBuffer::DX11GUniformBuffer(const GDevicePtr& device) : UniformBuffer(device)
+    {
+
+    }
+
+    void DX11GUniformBuffer::setState(const Layout* layout, int elemets_count, const void* data = nullptr)
+    {
+        D3D11_BUFFER_DESC desc = {};
+        desc.ByteWidth = UINT(m_data.size());
+        desc.Usage = D3D11_USAGE_DYNAMIC;
+        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        desc.MiscFlags = 0;
+        desc.StructureByteStride = layout->stride;
+
+        if (data)
+        {
+            D3D11_SUBRESOURCE_DATA dxdata = {};
+            dxdata.pSysMem = data;
+            dxdata.SysMemPitch = desc.ByteWidth;
+            dxdata.SysMemSlicePitch = desc.ByteWidth;
+            getD3DErr(m_device->getDeviceImpl()->CreateBuffer(&desc, &dxdata, &m_handle));
+        }
+        else
+        {
+            getD3DErr(m_device->getDeviceImpl()->CreateBuffer(&desc, nullptr, &m_handle));
+        }
+    }
+
+    void DX11GUniformBuffer::setSubData(int start_element, int num_elements, const void* data)
+    {
+
+    }
+
+    void DX11GUniformBuffer::setValue(const char* name, float v, int element_idx = 0)
+    {
+
+    }
+    
+    void DX11GUniformBuffer::setValue(const char* name, int i, int element_idx = 0)
+    {
+
+    }
+
+    void DX11GUniformBuffer::setValue(const char* name, const glm::vec2& v, int element_idx = 0)
+    {
+
+    }
+
+    void DX11GUniformBuffer::setValue(const char* name, const glm::vec3& v, int element_idx = 0)
+    {
+
+    }
+
+    void DX11GUniformBuffer::setValue(const char* name, const glm::vec4& v, int element_idx = 0)
+    {
+
+    }
+    
+    void DX11GUniformBuffer::setValue(const char* name, const glm::mat4& m, int element_idx = 0)
+    {
+
+    }
+
+    void DX11GUniformBuffer::validateDynamicData()
+    {
+        D3D11_MAPPED_SUBRESOURCE map_res = {};
+        
+        getD3DErr(m_device->getDX11DeviceContext()->Map(m_handle.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map_res));
+        memcpy(map_res.pData, m_data.data(), m_data.size());
+        m_device->getDX11DeviceContext()->Unmap(m_handle.Get(), 0);        
+    }
+
+    ComPtr<ID3D11Buffer> DX11GUniformBuffer::getHandle()
+    {
+        return m_handle;
     }
 
 }

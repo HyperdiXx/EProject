@@ -42,10 +42,10 @@
     <ClCompile Include="src\graphics\emesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ecomponents.cpp">
+    <ClCompile Include="src\edx11api.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\edx11api.cpp">
+    <ClCompile Include="src\ecomponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

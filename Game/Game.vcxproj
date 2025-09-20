@@ -126,7 +126,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VSProjects\Project\Game\include;E:\VSProjects\Project\Game\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VSProjects\EProject\Game\include;E:\VSProjects\EProject\Game\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -144,7 +144,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Code\Project\Game\include;D:\Code\Project\Game\lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\VSProjects\EProject\Game\lib;E:\VSProjects\EProject\Game\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -157,7 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ecomponents.cpp" />
+    <ClCompile Include="src\ecomponents.cpp" />
     <ClCompile Include="src\ecs\eentity.cpp" />
     <ClCompile Include="src\edx11api.cpp" />
     <ClCompile Include="src\egraphics.cpp" />

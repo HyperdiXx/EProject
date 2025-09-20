@@ -197,8 +197,20 @@ namespace EProject
         void init(const WindowParameters& params) override;
         void shutdown() override;
 
+        FrameBufferPtr createFramebuffer() override;
+        GPUTexture2DPtr createTexture2D() override;
+        IndexBufferPtr createIndexBuffer() override;
+        VertexBufferPtr createVertexBuffer() override;
+        ShaderProgramPtr createShaderProgram() override;
+        UniformBufferPtr createUniformBuffer() override;
+        StructuredBufferPtr createStructuredBuffer() override;
+
         GDeviceAPI* getDevicePtr() override;
         GSamplerState* obtainSamplerState(const Sampler& s) override;
+        GStates* getStates() override;
+
+        ID3D11Device* getDX11Device() const;
+        ID3D11DeviceContext* getDX11DeviceContext() const;
     private:
         ComPtr<ID3D11Device> m_dev;
         ComPtr<ID3D11DeviceContext> m_context;
@@ -224,7 +236,7 @@ namespace EProject
         ComPtr<ID3D11SamplerState> m_state;
     };
 
-    class DX11GStates
+    class DX11GStates : public GStates
     {
     private:
         struct StateData
@@ -266,24 +278,364 @@ namespace EProject
     private:
         void setDefaultStates();
     public:
-        void push();
-        void pop();
+        void validateStates() override;
+        void push() override;
+        void pop() override;
 
-        void setWireframe(bool wire);
-        void setCull(CullMode cm);
+        void setWireframe(bool wire) override;
+        void setCull(CullMode cm) override;
 
-        void setDepthEnable(bool enable);
-        void setDepthWrite(bool enable);
-        void setDepthFunc(Compare cmp);
+        void setDepthEnable(bool enable) override;
+        void setDepthWrite(bool enable) override;
+        void setDepthFunc(Compare cmp) override;
 
-        void setBlend(bool enable, Blend src = Blend::One, Blend dst = Blend::One, int rt_index = -1, BlendFunc bf = BlendFunc::Add);
+        void setBlend(bool enable, Blend src = Blend::One, Blend dst = Blend::One, int rt_index = -1, BlendFunc bf = BlendFunc::Add) override;
         void setBlendSeparateAlpha(bool enable, Blend src_color = Blend::One, Blend dst_color = Blend::One, BlendFunc bf_color = BlendFunc::Add,
             Blend src_alpha = Blend::One, Blend dst_alpha = Blend::One, BlendFunc bf_alpha = BlendFunc::Add,
-            int rt_index = -1);
+            int rt_index = -1) override;
 
-        void setColorWrite(bool enable, int rt_index = -1);
+        void setColorWrite(bool enable, int rt_index = -1) override;
 
-        void validateStates();
         DX11GStates(ID3D11Device* device, ID3D11DeviceContext* device_context);
+    };
+
+    class DX11GShaderProgram : public ShaderProgram
+    {
+    private:
+
+        const ShaderType cShaders[6] = { ShaderType::Vertex, ShaderType::Hull, ShaderType::Domain, ShaderType::Geometry, ShaderType::Pixel, ShaderType::Compute };
+
+        enum class SlotKind { Uniform, Texture, Buffer, Sampler };
+
+        struct ShaderSlot
+        {
+            SlotKind kind;
+            std::string name;
+            const Layout* layout;
+            int bindPoints[6] = { -1,-1,-1,-1,-1,-1 };
+
+            ComPtr<ID3D11ShaderResourceView> view;
+            ComPtr<ID3D11Buffer> buffer;
+            ID3D11SamplerState* sampler;
+
+            void select(ID3D11DeviceContext* dev) const;
+            ShaderSlot() : kind(SlotKind::Uniform), layout(nullptr), sampler(nullptr) {}
+        };
+
+        struct InputLayoutData
+        {
+            const Layout* vertices;
+            const Layout* instances;
+            int step_rate;
+            ComPtr<ID3D11InputLayout> m_dx_layout;
+            InputLayoutData();
+            void rebuildLayout(ID3D11Device* device, const std::string& shader_code);
+        };
+
+    public:
+
+        DX11GShaderProgram(const GDevicePtr& device);
+        ~DX11GShaderProgram();
+
+        bool compileFromFile(const ShaderInput& input);
+        bool create();
+
+        void activateProgram();
+        void setInputBuffers(const VertexBufferPtr& vbo, const IndexBufferPtr& ibo, const VertexBufferPtr& instances, int instanceStepRate);
+
+        void drawIndexed(PrimTopology pt, const DrawIndexedCmd& cmd);
+        void drawIndexed(PrimTopology pt, const std::vector<DrawIndexedCmd>& cmd_buf);
+        void drawIndexed(PrimTopology pt, int index_start = 0, int index_count = -1, int instance_count = -1, int base_vertex = 0, int base_instance = 0);
+        void draw(PrimTopology pt, int vert_start = 0, int vert_count = -1, int instance_count = -1, int base_instance = 0);
+
+        void setValue(const char* name, float v);
+        void setValue(const char* name, int i);
+        void setValue(const char* name, const glm::vec2& v);
+        void setValue(const char* name, const glm::vec3& v);
+        void setValue(const char* name, const glm::vec4& v);
+        void setValue(const char* name, const glm::mat4& m);
+
+        void setResource(const char* name, const UniformBufferPtr& ubo);
+        void setResource(const char* name, const StructuredBufferPtr& sbo);
+        void setResource(const char* name, const GPUTexture2DPtr& tex, bool as_array = false, bool as_cubemap = false);
+        //void setResource(const char* name, const Texture3DPtr& tex);
+        void setResource(const char* name, const Sampler& s);
+
+
+    private:
+        const Layout* autoReflectCB(ID3D11ShaderReflectionConstantBuffer* cb_ref);
+        void autoReflect(const void* data, int data_size, ShaderType st);
+
+        void selectInputBuffers();
+        void selectTopology(PrimTopology pt);
+
+        bool isProgramActive() const;
+
+        ID3D11InputLayout* getLayout(const Layout* vertices, const Layout* instances, int step_rate);
+
+        int obtainSlotIdx(SlotKind kind, const std::string& name, const Layout* layout);
+        int findSlot(const char* name);
+
+    private:
+
+        UniformBufferPtr m_ub[6];
+        bool m_globals_dirty;
+
+        ID3D10Blob* m_shaderData[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+        std::array<std::string, 6> m_shaderCode = { std::string(), std::string(), std::string(), std::string(), std::string(), std::string() };
+        ComPtr<ID3D11DeviceChild> m_shaders[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+        std::vector<ShaderSlot> m_slots;
+
+        VertexBufferPtr m_selectedVBO;
+        IndexBufferPtr m_selectedIBO;
+        VertexBufferPtr m_selectedInstances;
+        int m_selectedInstanceStep;
+
+        std::vector<InputLayoutData> m_layouts;
+
+    };
+
+    class VertexBuffer : public DeviceHolder
+    {
+        friend class ShaderProgram;
+    public:
+        VertexBuffer(const GDevicePtr& device);
+
+        void setState(const Layout* layout, int vertex_count, const void* data = nullptr);
+        void setSubData(int start_vertex, int num_vertices, const void* data);
+
+        int getVertexCount() const;
+        const Layout* getLayout() const;
+    private:
+        const Layout* m_layout = nullptr;
+        ComPtr<ID3D11Buffer> m_handle;
+        int m_vertCount = 0;
+    };
+
+    class IndexBuffer : public DeviceHolder
+    {
+        friend class ShaderProgram;
+    public:
+        IndexBuffer(const GDevicePtr& device);
+
+        void setState(int ind_count, const void* data = nullptr);
+        void setSubData(int start_idx, int num_indices, const void* data);
+
+        int getIndexCount() const;
+
+    private:
+        ComPtr<ID3D11Buffer> m_handle;
+        int m_indCount = 0;
+    };
+
+    class StructuredBuffer : public DeviceHolder
+    {
+        friend class ShaderProgram;
+        friend class Framebuffer;
+    public:
+        StructuredBuffer(const GDevicePtr& device);
+
+        void setState(int stride, int vertex_count, bool UAV = false, bool UAV_with_counter = false, const void* data = nullptr);
+        void setSubData(int start_vertex, int num_vertices, const void* data);
+
+        void readBack(void* data);
+
+        int getStride() const;
+        int getVertexCount() const;
+
+    private:
+        ComPtr<ID3D11ShaderResourceView> getShaderResource();
+        ComPtr<ID3D11UnorderedAccessView> getUnorderedAccess();
+
+    private:
+        ComPtr<ID3D11Buffer> m_handle;
+        ComPtr<ID3D11ShaderResourceView> m_srv;
+        ComPtr<ID3D11UnorderedAccessView> m_uav;
+        int m_stride = 0;
+        int m_vert_count = 0;
+        bool m_UAV_access = false;
+        bool m_UAV_with_counter = false;
+    };
+
+    class DX11GUniformBuffer : public UniformBuffer
+    {
+    public:
+        DX11GUniformBuffer(const GDevicePtr& device);
+
+        void setState(const Layout* layout, int elemets_count, const void* data = nullptr);
+        void setSubData(int start_element, int num_elements, const void* data);
+        void setValue(const char* name, float v, int element_idx = 0);
+        void setValue(const char* name, int i, int element_idx = 0);
+        void setValue(const char* name, const glm::vec2& v, int element_idx = 0);
+        void setValue(const char* name, const glm::vec3& v, int element_idx = 0);
+        void setValue(const char* name, const glm::vec4& v, int element_idx = 0);
+        void setValue(const char* name, const glm::mat4& m, int element_idx = 0);
+        void validateDynamicData();
+
+        ComPtr<ID3D11Buffer> getHandle();
+    private:
+        ComPtr<ID3D11Buffer> m_handle;
+    };
+
+    class GPUTexture2D : public DeviceHolder
+    {
+        friend class Framebuffer;
+        friend class ShaderProgram;
+    public:
+        GPUTexture2D(const GDevicePtr& device);
+
+        TextureFmt format() const;
+        glm::ivec2 size() const;
+        int slicesCount() const;
+        int mipsCount() const;
+        void setState(TextureFmt fmt, int mip_levels = 0);
+        void setState(TextureFmt fmt, glm::ivec2 size, int mip_levels = 0, int slices = 1, const void* data = nullptr);
+        void setSubData(const glm::ivec2& offset, const glm::ivec2& size, int slice, int mip, const void* data);
+        void generateMips();
+
+        void readBack(void* data, int mip, int array_slice);
+
+        ID3D11ShaderResourceView* _getShaderResView(bool as_array, bool as_cubemap);
+    private:
+        struct ivec3_hasher
+        {
+            std::size_t operator() (const glm::ivec3& v) const
+            {
+                return std::hash<int>()(v.x) ^ std::hash<int>()(v.y) ^ std::hash<int>()(v.z);
+            }
+        };
+
+        struct ivec2_hasher
+        {
+            std::size_t operator() (const glm::ivec2& v) const
+            {
+                return std::hash<int>()(v.x) ^ std::hash<int>()(v.y);
+            }
+        };
+
+    private:
+        ComPtr<ID3D11RenderTargetView> buildRenderTarget(int mip, int slice_start, int slice_count) const;
+        ComPtr<ID3D11DepthStencilView> buildDepthStencil(int mip, int slice_start, int slice_count, bool read_only) const;
+        ComPtr<ID3D11ShaderResourceView> getShaderResource(bool as_array, bool as_cubemap);
+        ComPtr<ID3D11UnorderedAccessView> getUnorderedAccess(int mip, int slice_start, int slice_count, bool as_array);
+
+        void clearResViews();
+
+    private:
+        ComPtr<ID3D11Texture2D> m_handle;
+        ComPtr<ID3D11ShaderResourceView> m_srv[4];
+
+        std::unordered_map<glm::ivec3, ComPtr<ID3D11UnorderedAccessView>, ivec3_hasher> m_uav;
+
+        TextureFmt m_fmt;
+        glm::ivec2 m_size;
+        int m_slices;
+        int m_mips_count;
+    };
+
+    static int getPixelsSize(TextureFmt fmt);
+
+    class Framebuffer : public DeviceHolder
+    {
+        friend class GDevice;
+    private:
+        struct Tex2DParams
+        {
+            int mip;
+            int slice_start;
+            int slice_count;
+            bool read_only;
+            bool as_array;
+            Tex2DParams();
+            Tex2DParams(int mip, int slice_start, int slice_count, bool ronly, bool as_array);
+            bool operator == (const Tex2DParams& b);
+        };
+
+        enum class UAV_slot_kind { empty, tex, buf };
+        struct UAVSlot
+        {
+            UAV_slot_kind kind;
+            GPUTexture2DPtr tex;
+            Tex2DParams tex_params;
+            StructuredBufferPtr buf;
+            ComPtr<ID3D11UnorderedAccessView> view;
+            int initial_counter;
+
+            UAVSlot()
+            {
+                kind = UAV_slot_kind::empty;
+                this->tex = nullptr;
+                this->buf = nullptr;
+            }
+
+            UAVSlot(const GPUTexture2DPtr& tex, int mip, int slice_start, int slice_count, bool as_array)
+            {
+                kind = UAV_slot_kind::tex;
+                buf = nullptr;
+                this->tex = tex;
+                tex_params.mip = mip;
+                tex_params.read_only = false;
+                tex_params.slice_count = slice_count;
+                tex_params.slice_start = slice_start;
+                tex_params.as_array = as_array;
+                this->initial_counter = -1;
+            }
+
+            UAVSlot(const StructuredBufferPtr& buf, int initial_counter)
+            {
+                kind = UAV_slot_kind::buf;
+                this->buf = buf;
+                this->tex = nullptr;
+                this->initial_counter = initial_counter;
+            }
+        };
+
+    public:
+
+        Framebuffer(const GDevicePtr& device);
+        ~Framebuffer();
+
+        void clearColorSlot(int slot, const glm::vec4& color);
+        void clearDS(float depth, bool clear_depth = true, char stencil = 0, bool clear_stencil = false);
+
+        void setColorSlot(int slot, const GPUTexture2DPtr& tex, int mip = 0, int slice_start = 0, int slice_count = 1);
+        void setDS(const GPUTexture2DPtr& tex, int mip = 0, int slice_start = 0, int slice_count = 1, bool readonly = false);
+        GPUTexture2DPtr getColorSlot(int slot) const;
+        GPUTexture2DPtr getDS() const;
+
+        void clearUAV(int slot, uint32_t v);
+        void setUAV(int slot, const GPUTexture2DPtr& tex, int mip = 0, int slice_start = 0, int slice_count = 1, bool as_array = false);
+        void setUAV(int slot, const StructuredBufferPtr& buf, int initial_counter = -1);
+
+        void blitToDefaultFBO(int from_slot);
+
+        void setSizeFromWindow();
+        void setSize(const glm::ivec2& xy);
+        glm::ivec2 getSize() const;
+    private:
+        void prepareSlots();
+    private:
+
+        GPUTexture2DPtr m_tex[G_D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+        GPUTexture2DPtr m_depth;
+
+        Tex2DParams m_tex_params[G_D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+        Tex2DParams m_depth_params;
+
+        UAVSlot m_uav[G_D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT + G_D3D11_PS_CS_UAV_REGISTER_COUNT];
+
+        ComPtr<ID3D11RenderTargetView> m_color_views[G_D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+        ComPtr<ID3D11DepthStencilView> m_depth_view;
+
+        std::vector<ID3D11RenderTargetView*> m_colors_to_bind;
+        std::vector<ID3D11UnorderedAccessView*> m_uav_to_bind;
+        std::vector<UINT> m_uav_initial_counts;
+
+        glm::ivec2 m_size;
+        int m_rtv_count = 0;
+        int m_uav_to_bind_count = 0;
+
+        bool m_colors_to_bind_dirty = false;
     };
 }
