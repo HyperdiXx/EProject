@@ -277,7 +277,6 @@ namespace EProject
 
         m_world.init(m_manager, m_device);
 
-        // Timer...
         m_current = std::chrono::high_resolution_clock::now();
         m_last = std::chrono::high_resolution_clock::now();
         m_deltaTime = std::chrono::duration<float>(0.0f);

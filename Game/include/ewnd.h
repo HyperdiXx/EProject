@@ -8,6 +8,9 @@
 #include <windows.h>
 #include <eheader.h>
 
+//????
+#include <chrono>
+
 namespace EProject
 {
     struct ShiftState
@@ -78,8 +81,9 @@ namespace EProject
         
         World m_world;
 
-        std::chrono::time_point m_current;
-        std::chrono::time_point m_last;
+        std::chrono::steady_clock::time_point m_current;
+        std::chrono::steady_clock::time_point m_last;
+        std::chrono::duration<float> m_deltaTime;
 
         float m_zoom = 60.0f;
     };
