@@ -480,10 +480,10 @@ namespace EProject
 
     void DX11GDevice::init(const WindowParameters& params)
     {
-        assert(params.size.x == 0);
-        assert(params.size.y == 0);
-
         const auto& size = params.size;
+     
+        assert(size.x != 0);
+        assert(size.y != 0);
 
         DXGI_SWAP_CHAIN_DESC sd;
         ZeroMemory(&sd, sizeof(sd));
@@ -503,7 +503,7 @@ namespace EProject
             nullptr,
             D3D_DRIVER_TYPE_HARDWARE,
             0,
-            D3D11_CREATE_DEVICE_SINGLETHREADED,// | D3D11_CREATE_DEVICE_DEBUG,
+            D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_DEBUG,
             nullptr,
             0,
             D3D11_SDK_VERSION,
@@ -764,68 +764,68 @@ namespace EProject
 
         if (bindPoints[int(ShaderType::Vertex)] >= 0)
         {
-            /*switch (kind)
+            switch (kind)
             {
                 case SlotKind::Uniform: { dev->VSSetConstantBuffers(bindPoints[int(ShaderType::Vertex)], 1, &b); break; }
                 case SlotKind::Texture: { dev->VSSetShaderResources(bindPoints[int(ShaderType::Vertex)], 1, &v); break; }
                 case SlotKind::Buffer: { dev->VSSetShaderResources(bindPoints[int(ShaderType::Vertex)], 1, &v); break; }
                 case SlotKind::Sampler: { dev->VSSetSamplers(bindPoints[int(ShaderType::Vertex)], 1, &sampler); break; }
-            }*/
+            }
         }
 
         if (bindPoints[int(ShaderType::Hull)] >= 0)
         {
-            /*switch (kind)
+            switch (kind)
             {
                 case SlotKind::Uniform: { dev->HSSetConstantBuffers(bindPoints[int(ShaderType::Hull)], 1, &b); break; }
                 case SlotKind::Texture: { dev->HSSetShaderResources(bindPoints[int(ShaderType::Hull)], 1, &v); break; }
                 case SlotKind::Buffer: { dev->HSSetShaderResources(bindPoints[int(ShaderType::Hull)], 1, &v); break; }
                 case SlotKind::Sampler: { dev->HSSetSamplers(bindPoints[int(ShaderType::Hull)], 1, &sampler); break; }
-            }*/
+            }
         }
 
         if (bindPoints[int(ShaderType::Domain)] >= 0)
         {
-            /*switch (kind)
+            switch (kind)
             {
                 case SlotKind::Uniform: { dev->DSSetConstantBuffers(bindPoints[int(ShaderType::Domain)], 1, &b); break; }
                 case SlotKind::Texture: { dev->DSSetShaderResources(bindPoints[int(ShaderType::Domain)], 1, &v); break; }
                 case SlotKind::Buffer: { dev->DSSetShaderResources(bindPoints[int(ShaderType::Domain)], 1, &v); break; }
                 case SlotKind::Sampler: { dev->DSSetSamplers(bindPoints[int(ShaderType::Domain)], 1, &sampler); break; }
-            }*/
+            }
         }
 
         if (bindPoints[int(ShaderType::Geometry)] >= 0)
         {
-            /*switch (kind)
+            switch (kind)
             {
                 case SlotKind::Uniform: { dev->GSSetConstantBuffers(bindPoints[int(ShaderType::Geometry)], 1, &b); break; }
                 case SlotKind::Texture: { dev->GSSetShaderResources(bindPoints[int(ShaderType::Geometry)], 1, &v); break; }
                 case SlotKind::Buffer: { dev->GSSetShaderResources(bindPoints[int(ShaderType::Geometry)], 1, &v); break; }
                 case SlotKind::Sampler: { dev->GSSetSamplers(bindPoints[int(ShaderType::Geometry)], 1, &sampler); break; }
-            }*/
+            }
         }
 
         if (bindPoints[int(ShaderType::Pixel)] >= 0)
         {
-            /*switch (kind)
+            switch (kind)
             {
                 case SlotKind::Uniform: { dev->PSSetConstantBuffers(bindPoints[int(ShaderType::Pixel)], 1, &b); break; }
                 case SlotKind::Texture: { dev->PSSetShaderResources(bindPoints[int(ShaderType::Pixel)], 1, &v); break; }
                 case SlotKind::Buffer: { dev->PSSetShaderResources(bindPoints[int(ShaderType::Pixel)], 1, &v); break; }
                 case SlotKind::Sampler: { dev->PSSetSamplers(bindPoints[int(ShaderType::Pixel)], 1, &sampler); break; }
-            }*/
+            }
         }
 
         if (bindPoints[int(ShaderType::Compute)] >= 0)
         {
-            /*switch (kind)
+            switch (kind)
             {
                 case SlotKind::Uniform: { dev->CSSetConstantBuffers(bindPoints[int(ShaderType::Compute)], 1, &b); break; }
                 case SlotKind::Texture: { dev->CSSetShaderResources(bindPoints[int(ShaderType::Compute)], 1, &v); break; }
                 case SlotKind::Buffer: { dev->CSSetShaderResources(bindPoints[int(ShaderType::Compute)], 1, &v); break; }
                 case SlotKind::Sampler: { dev->CSSetSamplers(bindPoints[int(ShaderType::Compute)], 1, &sampler); break; }
-            }*/
+            }
         }
     }
 
@@ -953,10 +953,25 @@ namespace EProject
         return true;
     }
 
-    void DX11GShaderProgram::activateProgram()
+    void DX11GShaderProgram::selectShaderPrograms()
     {
         auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
         assert(dx11Device);
+        auto* context = dx11Device->getDX11DeviceContext();
+
+        ID3D11DeviceChild* tmp = nullptr;
+        tmp = m_shaders[int(ShaderType::Vertex)] ? m_shaders[int(ShaderType::Vertex)].Get() : nullptr;
+        context->VSSetShader((ID3D11VertexShader*)tmp, nullptr, 0);
+        tmp = m_shaders[int(ShaderType::Hull)] ? m_shaders[int(ShaderType::Hull)].Get() : nullptr;
+        context->HSSetShader((ID3D11HullShader*)tmp, nullptr, 0);
+        tmp = m_shaders[int(ShaderType::Domain)] ? m_shaders[int(ShaderType::Domain)].Get() : nullptr;
+        context->DSSetShader((ID3D11DomainShader*)tmp, nullptr, 0);
+        tmp = m_shaders[int(ShaderType::Geometry)] ? m_shaders[int(ShaderType::Geometry)].Get() : nullptr;
+        context->GSSetShader((ID3D11GeometryShader*)tmp, nullptr, 0);
+        tmp = m_shaders[int(ShaderType::Pixel)] ? m_shaders[int(ShaderType::Pixel)].Get() : nullptr;
+        context->PSSetShader((ID3D11PixelShader*)tmp, nullptr, 0);
+        tmp = m_shaders[int(ShaderType::Compute)] ? m_shaders[int(ShaderType::Compute)].Get() : nullptr;
+        context->CSSetShader((ID3D11ComputeShader*)tmp, nullptr, 0);
     }
 
     void DX11GShaderProgram::setInputBuffers(const VertexBufferPtr& vbo, const IndexBufferPtr& ibo, const VertexBufferPtr& instances, int instanceStepRate)
@@ -1071,6 +1086,17 @@ namespace EProject
 
         auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
         assert(dx11Device);
+
+        auto* slot = static_cast<DX11GShaderSlot*>(m_slots[idx].get());
+        auto dx11UBO = static_cast<DX11GUniformBuffer*>(ubo.get())->getHandle().Get();
+        if ((slot->buffer ? slot->buffer.Get() : nullptr) != (ubo ? dx11UBO : nullptr))
+        {
+            slot->buffer = ubo ? dx11UBO : nullptr;
+            if (isProgramActive())
+            {                
+                slot->select(dx11Device->getDX11DeviceContext());
+            }
+        }
     }
 
     void DX11GShaderProgram::setResource(const char* name, const StructuredBufferPtr& sbo)
@@ -1086,17 +1112,18 @@ namespace EProject
 
         auto* dx11Sbo = static_cast<DX11GStructuredBuffer*>(sbo.get());
         assert(dx11Sbo);
-        ShaderSlot& slot = m_slots[idx];
+
+        auto* slot = static_cast<DX11GShaderSlot*>(m_slots[idx].get());
         ComPtr<ID3D11ShaderResourceView> srv = dx11Sbo ? dx11Sbo->getShaderResource() : nullptr;
 
-        /*if ((slot.view ? slot.view.Get() : nullptr) != srv.Get())
+        if ((slot->view ? slot->view.Get() : nullptr) != srv.Get())
         {
-            slot.view = std::move(srv);
+            slot->view = std::move(srv);
             if (isProgramActive())
             {
-                slot.select(dx11Device->getDX11DeviceContext());
+                slot->select(dx11Device->getDX11DeviceContext());
             }
-        }*/
+        }
     }
 
     void DX11GShaderProgram::setResource(const char* name, const GPUTexture2DPtr& tex, bool as_array, bool as_cubemap)
@@ -1113,19 +1140,21 @@ namespace EProject
         auto* dx11Texture2D = static_cast<DX11GPUTexture2D*>(tex.get());
         assert(dx11Texture2D);
 
-        ShaderSlot& slot = m_slots[idx];
+        auto* slot = static_cast<DX11GShaderSlot*>(m_slots[idx].get());
         ComPtr<ID3D11ShaderResourceView> srv = dx11Texture2D ? dx11Texture2D->getShaderResource(as_array, as_cubemap) : nullptr;
-        /*if ((slot.view ? slot.view.Get() : nullptr) != srv.Get())
+        if ((slot->view ? slot->view.Get() : nullptr) != srv.Get())
         {
-            slot.view = std::move(srv);
+            slot->view = std::move(srv);
             if (isProgramActive())
             {
-                slot.select(m_device->getDX11DeviceContext());
+                slot->select(dx11Device->getDX11DeviceContext());
             }
-        }*/
+        }
     }
 
+    //????
     //void setResource(const char* name, const Texture3DPtr& tex);
+
     void DX11GShaderProgram::setResource(const char* name, const Sampler& s)
     {
         int idx = findSlot(name);
@@ -1137,17 +1166,17 @@ namespace EProject
         auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
         assert(dx11Device);
 
-        ShaderSlot& slot = m_slots[idx];
+        auto* slot = static_cast<DX11GShaderSlot*>(m_slots[idx].get());
         
         ID3D11SamplerState* newSamplerPtr = static_cast<DX11GSamplerState*>(dx11Device->obtainSamplerState(s))->getStatePtr().Get();
-        /*if (slot.sampler != newSamplerPtr)
+        if (slot->sampler != newSamplerPtr)
         {
-            slot.sampler = newSamplerPtr;
+            slot->sampler = newSamplerPtr;
             if (isProgramActive())
             {
-                slot.select(m_device->getDX11DeviceContext());
+                slot->select(dx11Device->getDX11DeviceContext());
             }
-        }*/
+        }
     }
     
     const Layout* DX11GShaderProgram::autoReflectCB(ID3D11ShaderReflectionConstantBuffer* cb_ref)
@@ -1214,17 +1243,30 @@ namespace EProject
                 throw std::runtime_error("Unsupported resource type!");
             }
 
-            const Layout* l = nullptr;
-            //const Layout* l = res_desc.Type == D3D_SIT_CBUFFER ? autoReflectCB(ref->GetConstantBufferByName(res_desc.Name)) : nullptr;
-            //ShaderSlot& slot = m_slots[obtainSlotIdx(kind, std::string(res_desc.Name), l)];
-            //slot.bindPoints[int(st)] = res_desc.BindPoint;
+            const Layout* l = res_desc.Type == D3D_SIT_CBUFFER ? autoReflectCB(ref->GetConstantBufferByName(res_desc.Name)) : nullptr;
+            const int idx = obtainSlotIdx(kind, std::string(res_desc.Name), l);
+            auto* slot = static_cast<DX11GShaderSlot*>(m_slots[idx].get());
+            slot->bindPoints[int(st)] = res_desc.BindPoint;
 
-            /*if (slot.name == "Globals")
+            if (slot->name == "Globals")
             {
-                m_ub[int(st)] = std::make_shared<UniformBuffer>(m_device);
-                m_ub[int(st)]->setState(slot.layout, 1);
-                //slot.buffer = m_ub[int(st)]->getHandle();
-            }*/
+                m_ub[int(st)] = std::make_shared<DX11GUniformBuffer>(m_device);
+                m_ub[int(st)]->setState(slot->layout, 1);
+                
+                auto* ub = static_cast<DX11GUniformBuffer*>(m_ub[int(st)].get());
+                slot->buffer = ub->getHandle();
+            }
+        }
+    }
+
+    void DX11GShaderProgram::selectShaderSlots()
+    {
+        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
+        assert(dx11Device); 
+        for (auto& slot : m_slots)
+        {
+            auto* slotPtr = static_cast<DX11GShaderSlot*>(slot.get());
+            slotPtr->select(dx11Device->getDX11DeviceContext());
         }
     }
 
@@ -1233,23 +1275,24 @@ namespace EProject
         auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
         assert(dx11Device);
 
-        //ID3D11Buffer* dxBuf = m_selectedVBO ? m_selectedVBO->m_handle.Get() : nullptr;
-        //UINT stride = m_selectedVBO ? m_selectedVBO->m_layout->stride : 0;
-        //UINT offset = 0;
-        //dx11Device->getDX11DeviceContext()->IASetVertexBuffers(0, 1, &dxBuf, &stride, &offset);
+        auto* deviceContext = dx11Device->getDX11DeviceContext();
 
-        /*dxBuf = m_selectedInstances ? m_selectedInstances->m_handle.Get() : nullptr;
+        ID3D11Buffer* dxBuf = m_selectedVBO ? m_selectedVBO->m_handle.Get() : nullptr;
+        UINT stride = m_selectedVBO ? m_selectedVBO->m_layout->stride : 0;
+        UINT offset = 0;
+        deviceContext->IASetVertexBuffers(0, 1, &dxBuf, &stride, &offset);
+
+        dxBuf = m_selectedInstances ? m_selectedInstances->m_handle.Get() : nullptr;
         stride = m_selectedInstances ? m_selectedInstances->m_layout->stride : 0;
         offset = 0;
-        m_device->getDX11DeviceContext()->IASetVertexBuffers(1, 1, &dxBuf, &stride, &offset);*/
+        deviceContext->IASetVertexBuffers(1, 1, &dxBuf, &stride, &offset);
 
-        //dxBuf = m_selectedIBO ? m_selectedIBO->m_handle.Get() : nullptr;
-        ID3D11Buffer* dxBuf = nullptr;
-        dx11Device->getDX11DeviceContext()->IASetIndexBuffer(dxBuf, DXGI_FORMAT_R32_UINT, 0);
+        dxBuf = m_selectedIBO ? m_selectedIBO->m_handle.Get() : nullptr;
+        deviceContext->IASetIndexBuffer(dxBuf, DXGI_FORMAT_R32_UINT, 0);
 
         const Layout* vl = m_selectedVBO ? m_selectedVBO->getLayout() : nullptr;
         const Layout* il = m_selectedInstances ? m_selectedInstances->getLayout() : nullptr;
-        dx11Device->getDX11DeviceContext()->IASetInputLayout(getLayout(vl, il, m_selectedInstanceStep));
+        deviceContext->IASetInputLayout(getLayout(vl, il, m_selectedInstanceStep));
     }
 
     void DX11GShaderProgram::selectTopology(PrimTopology pt)
@@ -1336,13 +1379,24 @@ namespace EProject
         return new_l.m_dx_layout.Get();               
     }
 
+    std::shared_ptr<ShaderProgram::ShaderSlot> DX11GShaderProgram::createNewSlot(SlotKind kind, const std::string& name, const Layout* layout)
+    {
+        auto newSlot = std::make_shared<DX11GShaderSlot>();
+        newSlot->kind = kind;
+        newSlot->name = name;
+        newSlot->layout = layout;
+        return newSlot;
+    }
+
     DX11GUniformBuffer::DX11GUniformBuffer(const GDevicePtr& device) : UniformBuffer(device)
     {
 
     }
 
-    void DX11GUniformBuffer::setState(const Layout* layout, int elemets_count, const void* data)
+    void DX11GUniformBuffer::setState(const Layout* layout, int elem_count, const void* data)
     {
+        UniformBuffer::setState(layout, elem_count, data);
+
         D3D11_BUFFER_DESC desc = {};
         desc.ByteWidth = UINT(m_data.size());
         desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -1356,51 +1410,53 @@ namespace EProject
 
         if (data)
         {
-            D3D11_SUBRESOURCE_DATA dxdata = {};
-            dxdata.pSysMem = data;
-            dxdata.SysMemPitch = desc.ByteWidth;
-            dxdata.SysMemSlicePitch = desc.ByteWidth;
-            getD3DErr(dx11Device->getDX11Device()->CreateBuffer(&desc, &dxdata, &m_handle));
+            D3D11_SUBRESOURCE_DATA dxData = {};
+            dxData.pSysMem = data;
+            dxData.SysMemPitch = desc.ByteWidth;
+            dxData.SysMemSlicePitch = desc.ByteWidth;
+            getD3DErr(dx11Device->getDX11Device()->CreateBuffer(&desc, &dxData, &m_handle));
         }
         else
         {
             getD3DErr(dx11Device->getDX11Device()->CreateBuffer(&desc, nullptr, &m_handle));
         }
+
+        m_dirty = false;
     }
 
     void DX11GUniformBuffer::setSubData(int start_element, int num_elements, const void* data)
     {
-
+        UniformBuffer::setSubData(start_element, num_elements, data);
     }
 
     void DX11GUniformBuffer::setValue(const char* name, float v, int element_idx)
     {
-
+        UniformBuffer::setValue(name, v, element_idx);
     }
     
     void DX11GUniformBuffer::setValue(const char* name, int i, int element_idx)
     {
-
+        UniformBuffer::setValue(name, i, element_idx);
     }
 
     void DX11GUniformBuffer::setValue(const char* name, const glm::vec2& v, int element_idx)
     {
-
+        UniformBuffer::setValue(name, v, element_idx);
     }
 
     void DX11GUniformBuffer::setValue(const char* name, const glm::vec3& v, int element_idx)
     {
-
+        UniformBuffer::setValue(name, v, element_idx);
     }
 
     void DX11GUniformBuffer::setValue(const char* name, const glm::vec4& v, int element_idx)
     {
-
+        UniformBuffer::setValue(name, v, element_idx);
     }
     
     void DX11GUniformBuffer::setValue(const char* name, const glm::mat4& m, int element_idx)
     {
-
+        UniformBuffer::setValue(name, m, element_idx);
     }
 
     void DX11GUniformBuffer::validateDynamicData()
@@ -1626,7 +1682,7 @@ namespace EProject
         {
             D3D11_SUBRESOURCE_DATA d3ddata = {};
             d3ddata.pSysMem = data;
-            //d3ddata.SysMemPitch = getPixelsSize(m_fmt) * m_size.x;
+            d3ddata.SysMemPitch = getPixelsSize(m_fmt) * m_size.x;
             d3ddata.SysMemSlicePitch = d3ddata.SysMemPitch * m_size.y;
             getD3DErr(dx11Device->getDX11Device()->CreateTexture2D(&desc, &d3ddata, &m_handle));
         }

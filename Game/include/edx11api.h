@@ -159,17 +159,11 @@ namespace EProject
     class DX11GShaderProgram : public ShaderProgram
     {
     private:
-
-        const ShaderType cShaders[6] = { ShaderType::Vertex, ShaderType::Hull, ShaderType::Domain, ShaderType::Geometry, ShaderType::Pixel, ShaderType::Compute };
-
-        enum class SlotKind { Uniform, Texture, Buffer, Sampler };
-
-        struct DX11GShaderSlot
+        struct DX11GShaderSlot : public ShaderProgram::ShaderSlot
         {
             ComPtr<ID3D11ShaderResourceView> view;
             ComPtr<ID3D11Buffer> buffer;
             ID3D11SamplerState* sampler = nullptr;
-            int bindPoints[6] = { -1,-1,-1,-1,-1,-1 };
 
             void select(ID3D11DeviceContext* dev) const;            
         };
@@ -191,7 +185,6 @@ namespace EProject
         bool compileFromFile(const ShaderInput& input);
         bool create();
 
-        void activateProgram();
         void setInputBuffers(const VertexBufferPtr& vbo, const IndexBufferPtr& ibo, const VertexBufferPtr& instances, int instanceStepRate);
 
         void drawIndexed(PrimTopology pt, const DrawIndexedCmd& cmd);
@@ -217,12 +210,14 @@ namespace EProject
         const Layout* autoReflectCB(ID3D11ShaderReflectionConstantBuffer* cb_ref);
         void autoReflect(const void* data, int data_size, ShaderType st);
 
-        void selectInputBuffers();
+        void selectShaderSlots() override;
+        void selectInputBuffers() override;
+        void selectShaderPrograms() override;
         void selectTopology(PrimTopology pt);
 
         ID3D11InputLayout* getLayout(const Layout* vertices, const Layout* instances, int step_rate);
+        std::shared_ptr<ShaderProgram::ShaderSlot> createNewSlot(SlotKind kind, const std::string& name, const Layout* layout) override;
     private:
-
         UniformBufferPtr m_ub[6];
 
         ID3D10Blob* m_shaderData[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };

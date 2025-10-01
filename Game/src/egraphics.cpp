@@ -125,9 +125,9 @@ namespace EProject
 
     void Render2D::createBaseShader()
     {
-        m_triangle = m_device->createShaderProgram();
+        static const std::filesystem::path& shadersDir = PathHandler::getShadersDir();
 
-        auto shadersDir = PathHandler::getShadersDir();
+        m_triangle = m_device->createShaderProgram();
 
         ShaderInput vsInputTri = {};
 

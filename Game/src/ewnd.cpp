@@ -258,7 +258,8 @@ namespace EProject
         m_render3d(nullptr, m_camera3d)
     {                       
         m_device = std::make_shared<GDevice>(getHandle(), false);
-        
+        m_device->setupDevice();
+
         m_manager = std::make_shared<AssetManager>(m_device);
 
         m_camera2d = std::make_shared<Camera2D>(m_device);

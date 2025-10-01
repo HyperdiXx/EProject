@@ -18,9 +18,6 @@ namespace EProject
         m_params.name = "Window1";
         m_params.isSrgb = sRGB;
         m_params.size = glm::ivec2(rct.right - rct.left, rct.bottom - rct.top);
-
-        m_device = std::make_shared<DX11GDevice>(shared_from_this());
-        m_device->init(m_params);
     }
 
     GDevice::~GDevice()
@@ -135,6 +132,17 @@ namespace EProject
         //return m_device->createDefaultRTV(m_params);
     }
 
+    void GDevice::setupDevice()
+    {
+        m_device = std::make_shared<DX11GDevice>(shared_from_this());
+        m_device->init(m_params);
+    }
+
+    void GDevice::draw()
+    {
+
+    }
+
     void GDevice::beginFrame()
     {
         const glm::ivec2 new_wnd_size = getWindowSize();
@@ -227,30 +235,13 @@ namespace EProject
             }
         }
 
-        if (!isProgramActive()) 
+        if (!isProgramActive())
         {
             m_device->m_activeProgram = this;
             
-            for (const auto& slot : m_slots)
-            {
-                //slot.select(m_device->getDX11DeviceContext());
-            }
-                        
+            selectShaderSlots();           
             selectInputBuffers();
-
-            /*ID3D11DeviceChild* tmp = nullptr;
-            tmp = m_shaders[int(ShaderType::Vertex)] ? m_shaders[int(ShaderType::Vertex)].Get() : nullptr;
-            m_device->getDX11DeviceContext()->VSSetShader((ID3D11VertexShader*)tmp, nullptr, 0);
-            tmp = m_shaders[int(ShaderType::Hull)] ? m_shaders[int(ShaderType::Hull)].Get() : nullptr;
-            m_device->getDX11DeviceContext()->HSSetShader((ID3D11HullShader*)tmp, nullptr, 0);
-            tmp = m_shaders[int(ShaderType::Domain)] ? m_shaders[int(ShaderType::Domain)].Get() : nullptr;
-            m_device->getDX11DeviceContext()->DSSetShader((ID3D11DomainShader*)tmp, nullptr, 0);
-            tmp = m_shaders[int(ShaderType::Geometry)] ? m_shaders[int(ShaderType::Geometry)].Get() : nullptr;
-            m_device->getDX11DeviceContext()->GSSetShader((ID3D11GeometryShader*)tmp, nullptr, 0);
-            tmp = m_shaders[int(ShaderType::Pixel)] ? m_shaders[int(ShaderType::Pixel)].Get() : nullptr;
-            m_device->getDX11DeviceContext()->PSSetShader((ID3D11PixelShader*)tmp, nullptr, 0);
-            tmp = m_shaders[int(ShaderType::Compute)] ? m_shaders[int(ShaderType::Compute)].Get() : nullptr;
-            m_device->getDX11DeviceContext()->CSSetShader((ID3D11ComputeShader*)tmp, nullptr, 0);*/
+            selectShaderPrograms();
         }
     }
 
@@ -397,26 +388,17 @@ namespace EProject
         m_globals_dirty = true;
     }
 
-    void ShaderProgram::setResource(const char* name, const UniformBufferPtr& ubo)
+    void ShaderProgram::selectShaderSlots()
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-        
-        ShaderSlot& slot = m_slots[idx];
-        /*if ((slot.buffer ? slot.buffer.Get() : nullptr) != (ubo ? ubo->m_handle.Get() : nullptr))
-        {
-            slot.buffer = ubo ? ubo->m_handle : nullptr;
-            if (isProgramActive())
-            {
-                slot.select(m_device->getDX11DeviceContext());
-            }
-        }*/
+
     }
 
     void ShaderProgram::selectInputBuffers()
+    {
+
+    }
+
+    void ShaderProgram::selectShaderPrograms()
     {
 
     }
@@ -437,21 +419,18 @@ namespace EProject
         {
             for (size_t i = 0; i < m_slots.size(); i++) 
             {
-                if (m_slots[i].name == name)
+                if (m_slots[i]->name == name)
                 {
-                    assert(m_slots[i].kind == kind);
-                    assert(m_slots[i].layout == layout);
+                    assert(m_slots[i]->kind == kind);
+                    assert(m_slots[i]->layout == layout);
                     return static_cast<int>(i);
                 }
             }
         }
         
-        ShaderSlot newSlot;
-        newSlot.kind = kind;
-        newSlot.name = name;
-        newSlot.layout = layout;
+        auto newSlot = createNewSlot(kind, name, layout);
         m_slots.push_back(newSlot);
-        
+
         return static_cast<int>(m_slots.size() - 1);
     }
 
@@ -459,7 +438,7 @@ namespace EProject
     {
         for (size_t i = 0; i < m_slots.size(); i++)
         {
-            if (m_slots[i].name == name)
+            if (m_slots[i]->name == name)
             {
                 return static_cast<int>(i);
             }
@@ -619,10 +598,6 @@ namespace EProject
         {
             memcpy(m_data.data(), data, m_data.size());
         }
-
-        
-        
-        m_dirty = false;
     }
 
     void UniformBuffer::setSubData(int start_element, int num_elements, const void* data)

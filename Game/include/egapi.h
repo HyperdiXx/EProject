@@ -309,6 +309,8 @@ namespace EProject
         
         /*Texture3DPtr createTexture3D();*/
 
+        void setupDevice();
+
         void draw();
 
         void beginFrame();
@@ -410,7 +412,6 @@ namespace EProject
         virtual void setResource(const char* name, const Sampler& s) = 0;
     protected:
         const ShaderType cShaders[6] = { ShaderType::Vertex, ShaderType::Hull, ShaderType::Domain, ShaderType::Geometry, ShaderType::Pixel, ShaderType::Compute };
-
         enum class SlotKind { Uniform, Texture, Buffer, Sampler };
 
         struct ShaderSlot
@@ -418,24 +419,28 @@ namespace EProject
             SlotKind kind;
             std::string name;
             const Layout* layout;
+            int bindPoints[6] = { -1,-1,-1,-1,-1,-1 };
 
             ShaderSlot() : kind(SlotKind::Uniform), layout(nullptr) {}
         };
     protected:
-        void selectInputBuffers();
+        virtual void selectShaderSlots();
+        virtual void selectInputBuffers();
+        virtual void selectShaderPrograms();
         void selectTopology(PrimTopology pt);
 
         bool isProgramActive() const;
 
         int obtainSlotIdx(SlotKind kind, const std::string& name, const Layout* layout);
         int findSlot(const char* name);
+        virtual std::shared_ptr<ShaderSlot> createNewSlot(SlotKind kind, const std::string& name, const Layout* layout) = 0;
     protected:
         UniformBufferPtr m_ub[6];
         bool m_globals_dirty;
 
         std::array<std::string, 6> m_shaderCode = { std::string(), std::string(), std::string(), std::string(), std::string(), std::string() };
-
-        std::vector<ShaderSlot> m_slots;
+        
+        std::vector<std::shared_ptr<ShaderSlot>> m_slots;
         VertexBufferPtr m_selectedVBO;
         IndexBufferPtr m_selectedIBO;
         VertexBufferPtr m_selectedInstances;
@@ -582,7 +587,7 @@ namespace EProject
         void setValue(void* dest, const void* data, int datasize);
         void* find(const char* name, int element_idx);
     protected:
-        std::vector<char> m_data;
+        std::vector<char> m_data = {0};
         const Layout* m_layout;
         int m_elements_count;
         bool m_dirty = false;
