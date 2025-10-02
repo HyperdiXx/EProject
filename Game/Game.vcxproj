@@ -126,7 +126,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VSProjects\EProject\Game\include;E:\VSProjects\EProject\Game\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\SDK\Vulkan\Include;E:\VSProjects\EProject\Game\include;E:\VSProjects\EProject\Game\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -144,7 +144,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\VSProjects\EProject\Game\lib;E:\VSProjects\EProject\Game\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\SDK\Vulkan\Include;E:\VSProjects\EProject\Game\lib;E:\VSProjects\EProject\Game\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -159,13 +159,14 @@
   <ItemGroup>
     <ClCompile Include="src\ecomponents.cpp" />
     <ClCompile Include="src\ecs\eentity.cpp" />
-    <ClCompile Include="src\edx11api.cpp" />
     <ClCompile Include="src\egraphics.cpp" />
     <ClCompile Include="src\egapi.cpp" />
     <ClCompile Include="src\eutils.cpp" />
     <ClCompile Include="src\ewnd.cpp" />
     <ClCompile Include="src\graphics\emesh.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\rhi\edx11api.cpp" />
+    <ClCompile Include="src\rhi\evkapi.cpp" />
     <ClCompile Include="src\world\esystems.cpp" />
     <ClCompile Include="src\world\eworld.cpp" />
   </ItemGroup>
@@ -175,8 +176,6 @@
     <ClInclude Include="include\ecs\eentity.h" />
     <ClInclude Include="include\ecs\eobject.h" />
     <ClInclude Include="include\ecs\esystem.h" />
-    <ClInclude Include="include\edx11api.h" />
-    <ClInclude Include="include\edx12api.h" />
     <ClInclude Include="include\egapi.h" />
     <ClInclude Include="include\egraphics.h" />
     <ClInclude Include="include\eheader.h" />
@@ -185,6 +184,9 @@
     <ClInclude Include="include\ewnd.h" />
     <ClInclude Include="include\glmh.h" />
     <ClInclude Include="include\graphics\emesh.h" />
+    <ClInclude Include="include\rhi\edx11api.h" />
+    <ClInclude Include="include\rhi\edx12api.h" />
+    <ClInclude Include="include\rhi\evkapi.h" />
     <ClInclude Include="include\utils\ecrc32.h" />
     <ClInclude Include="include\utils\estring.h" />
     <ClInclude Include="include\world\ecomponents.h" />

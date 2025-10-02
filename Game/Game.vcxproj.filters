@@ -42,10 +42,16 @@
     <ClCompile Include="src\graphics\emesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\edx11api.cpp">
+    <ClCompile Include="src\ecomponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ecomponents.cpp">
+    <ClCompile Include="src\evkapi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rhi\edx11api.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rhi\evkapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -63,9 +69,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\egapi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\edx11api.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\egraphics.h">
@@ -107,7 +110,13 @@
     <ClInclude Include="include\graphics\emesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\edx12api.h">
+    <ClInclude Include="include\rhi\edx12api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rhi\edx11api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rhi\evkapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

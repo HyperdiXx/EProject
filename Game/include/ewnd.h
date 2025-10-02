@@ -4,9 +4,11 @@
 #include "egraphics.h"
 #include "world/eworld.h"
 
+#ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
 #include <eheader.h>
+#endif // _WIN32
 
 //????
 #include <chrono>
