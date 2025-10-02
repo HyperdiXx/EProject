@@ -244,6 +244,9 @@ namespace EProject
 
         virtual void endFrame() = 0;
 
+        virtual void draw(int vert_start, int vert_count, int instance_count, int base_instance) = 0;
+        virtual void drawIndexed(int index_start, int index_count, int instance_count, int base_vertex, int base_instance) = 0;
+
         virtual GDeviceAPI* getDevicePtrRaw() = 0;
         virtual GSamplerState* obtainSamplerState(const Sampler& s) = 0;
         virtual GStates* getStates() = 0;
@@ -311,7 +314,8 @@ namespace EProject
 
         void setupDevice();
 
-        void draw();
+        void draw(int vert_start, int vert_count, int instance_count, int base_instance);
+        void drawIndexed(int index_start, int index_count, int instance_count, int base_vertex, int base_instance);
 
         void beginFrame();
         void endFrame();
@@ -427,7 +431,7 @@ namespace EProject
         virtual void selectShaderSlots();
         virtual void selectInputBuffers();
         virtual void selectShaderPrograms();
-        void selectTopology(PrimTopology pt);
+        virtual void selectTopology(PrimTopology pt);
 
         bool isProgramActive() const;
 

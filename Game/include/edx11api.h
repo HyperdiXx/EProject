@@ -53,6 +53,9 @@ namespace EProject
 
         void endFrame() override;
 
+        void draw(int vert_start, int vert_count, int instance_count, int base_instance) override;
+        void drawIndexed(int index_start, int index_count, int instance_count, int base_vertex, int base_instance) override;
+
         GDeviceAPI* getDevicePtrRaw() override;
         GSamplerState* obtainSamplerState(const Sampler& s) override;
         GStates* getStates() override;
@@ -182,8 +185,8 @@ namespace EProject
         DX11GShaderProgram(const GDevicePtr& device);
         ~DX11GShaderProgram();
 
-        bool compileFromFile(const ShaderInput& input);
-        bool create();
+        bool compileFromFile(const ShaderInput& input) override;
+        bool create() override;
 
         void setInputBuffers(const VertexBufferPtr& vbo, const IndexBufferPtr& ibo, const VertexBufferPtr& instances, int instanceStepRate);
 
@@ -218,15 +221,8 @@ namespace EProject
         ID3D11InputLayout* getLayout(const Layout* vertices, const Layout* instances, int step_rate);
         std::shared_ptr<ShaderProgram::ShaderSlot> createNewSlot(SlotKind kind, const std::string& name, const Layout* layout) override;
     private:
-        UniformBufferPtr m_ub[6];
-
         ID3D10Blob* m_shaderData[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
         ComPtr<ID3D11DeviceChild> m_shaders[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-
-        DX11GVertexBufferPtr m_selectedVBO;
-        DX11GIndexBufferPtr m_selectedIBO;
-        DX11GVertexBufferPtr m_selectedInstances;
-        int m_selectedInstanceStep;
 
         std::vector<InputLayoutData> m_layouts;
     };

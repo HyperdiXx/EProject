@@ -27,13 +27,12 @@ namespace EProject
     FrameBufferPtr GDevice::setFrameBuffer(const FrameBufferPtr& fbo, bool update_viewport)
     {
         FrameBufferPtr currentFbo = m_activeFbo.lock();
-        //std::weak_ptr<Framebuffer> m_new_fbo = fbo;
+        std::weak_ptr<Framebuffer> m_new_fbo = fbo;
 
         if (m_activeFboPtr != fbo.get())
         {
-            //m_activeFbo = m_new_fbo;
-            m_activeFboPtr = fbo.get();
-
+            m_activeFbo = m_new_fbo;
+            
             if (m_activeFboPtr)
             {
                 m_activeFboPtr->prepareSlots();
@@ -128,8 +127,7 @@ namespace EProject
 
     bool GDevice::createDefaultRTV()
     {     
-        return true;
-        //return m_device->createDefaultRTV(m_params);
+        return m_device->createDefaultRTV(m_params);
     }
 
     void GDevice::setupDevice()
@@ -138,9 +136,14 @@ namespace EProject
         m_device->init(m_params);
     }
 
-    void GDevice::draw()
+    void GDevice::draw(int vert_start, int vert_count, int instance_count, int base_instance)
     {
+        m_device->draw(vert_start, vert_count, instance_count, base_instance);
+    }
 
+    void GDevice::drawIndexed(int index_start, int index_count, int instance_count, int base_vertex, int base_instance)
+    {
+        m_device->drawIndexed(index_start, index_count, instance_count, base_vertex, base_instance);
     }
 
     void GDevice::beginFrame()
@@ -150,7 +153,6 @@ namespace EProject
         if (m_params.size != new_wnd_size)
         {
             m_params.size = new_wnd_size;
-
             createDefaultRTV();
         }
 
@@ -209,19 +211,6 @@ namespace EProject
         if (m_device->m_activeProgram == this) m_device->m_activeProgram = nullptr;
     }
 
-    bool ShaderProgram::compileFromFile(const ShaderInput& input)
-    {
-
-
-
-        return true;
-    }
-
-    bool ShaderProgram::create()
-    {           
-        return true;
-    }
-
     void ShaderProgram::activateProgram()
     {
         if (m_globals_dirty)
@@ -233,6 +222,8 @@ namespace EProject
                     m_ub[i]->validateDynamicData();
                 }
             }
+
+            m_globals_dirty = false;
         }
 
         if (!isProgramActive())
@@ -273,19 +264,9 @@ namespace EProject
         m_device->getStates()->validateStates();
 
         if (index_count < 0) index_count = m_selectedIBO->getIndexCount();
-        //if (instance_count < 0) instance_count = m_selected_instances ? m_selected_instances->VertexCount() : 0;
-        if (instance_count < 0) instance_count = 0;
+        if (instance_count < 0) instance_count = m_selectedInstances ? m_selectedInstances->getVertexCount() : 0;
 
-        //m_device->draw();
-
-        if (instance_count)
-        {
-            //m_device->getDX11DeviceContext()->DrawIndexedInstanced(index_count, instance_count, index_start, base_vertex, base_instance);
-        }
-        else
-        {
-            //m_device->getDX11DeviceContext()->DrawIndexed(index_count, index_start, base_vertex);
-        }
+        m_device->drawIndexed(index_start, index_count, instance_count, base_vertex, base_instance);
     }
 
     void ShaderProgram::draw(PrimTopology pt, int vert_start, int vert_count, int instance_count, int base_instance)
@@ -294,20 +275,11 @@ namespace EProject
         selectTopology(pt);
         
         m_device->getStates()->validateStates();
-        
-        //if (instance_count < 0) instance_count = m_selected_instances ? m_selected_instances->VertexCount() : 0;
 
         if (vert_count < 0) vert_count = m_selectedVBO->getVertexCount();
-        if (instance_count < 0) instance_count = 0;
+        if (instance_count < 0) instance_count = m_selectedInstances ? m_selectedInstances->getVertexCount() : 0;
 
-        if (instance_count)
-        {
-            //m_device->getDX11DeviceContext()->DrawInstanced(vert_count, instance_count, vert_start, base_instance);
-        }
-        else 
-        {
-            //m_device->getDX11DeviceContext()->Draw(vert_count, vert_start);
-        }
+        m_device->draw(vert_start, vert_count, instance_count, base_instance);
     }
 
     void ShaderProgram::setValue(const char* name, float v)
@@ -428,6 +400,11 @@ namespace EProject
             }
         }
         
+        if (int idx = findSlot(name.c_str()); idx >= 0)
+        {
+            return idx;
+        }
+
         auto newSlot = createNewSlot(kind, name, layout);
         m_slots.push_back(newSlot);
 
@@ -667,9 +644,7 @@ namespace EProject
             return;
         }
         
-        m_dirty = false;
-
-        
+        m_dirty = false;        
     }
 
     const Layout* UniformBuffer::getLayout() const

@@ -593,6 +593,30 @@ namespace EProject
         m_swapChain->Present(1, 0);
     }
 
+    void DX11GDevice::draw(int vert_start, int vert_count, int instance_count, int base_instance)
+    {
+        if (instance_count)
+        {
+            m_context->DrawInstanced(vert_count, instance_count, vert_start, base_instance);
+        }
+        else
+        {
+            m_context->Draw(vert_count, vert_start);
+        }
+    }
+
+    void DX11GDevice::drawIndexed(int index_start, int index_count, int instance_count, int base_vertex, int base_instance)
+    {
+        if (instance_count)
+        {
+            m_context->DrawIndexedInstanced(index_count, instance_count, index_start, base_vertex, base_instance);
+        }
+        else
+        {
+            m_context->DrawIndexed(index_count, index_start, base_vertex);
+        }
+    }
+
     bool DX11GDevice::createDefaultRTV(const WindowParameters& params)
     {
         ID3D11RenderTargetView* tmpRT = nullptr;
@@ -1006,74 +1030,32 @@ namespace EProject
 
     void DX11GShaderProgram::setValue(const char* name, float v)
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-
-        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
-        assert(dx11Device);
+        ShaderProgram::setValue(name, v);
     }
 
     void DX11GShaderProgram::setValue(const char* name, int i)
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-
-        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
-        assert(dx11Device);
+        ShaderProgram::setValue(name, i);
     }
 
     void DX11GShaderProgram::setValue(const char* name, const glm::vec2& v)
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-
-        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
-        assert(dx11Device);
+        ShaderProgram::setValue(name, v);
     }
 
     void DX11GShaderProgram::setValue(const char* name, const glm::vec3& v)
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-
-        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
-        assert(dx11Device);
+        ShaderProgram::setValue(name, v);
     }
 
     void DX11GShaderProgram::setValue(const char* name, const glm::vec4& v)
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-
-        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
-        assert(dx11Device);
+        ShaderProgram::setValue(name, v);
     }
 
     void DX11GShaderProgram::setValue(const char* name, const glm::mat4& m)
     {
-        int idx = findSlot(name);
-        if (idx < 0)
-        {
-            return;
-        }
-
-        auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
-        assert(dx11Device);
+        ShaderProgram::setValue(name, m);
     }
 
     void DX11GShaderProgram::setResource(const char* name, const UniformBufferPtr& ubo)
@@ -1250,11 +1232,11 @@ namespace EProject
 
             if (slot->name == "Globals")
             {
-                m_ub[int(st)] = std::make_shared<DX11GUniformBuffer>(m_device);
-                m_ub[int(st)]->setState(slot->layout, 1);
-                
-                auto* ub = static_cast<DX11GUniformBuffer*>(m_ub[int(st)].get());
+                auto ub = std::make_shared<DX11GUniformBuffer>(m_device);
+                ub->setState(slot->layout, 1);                
                 slot->buffer = ub->getHandle();
+
+                m_ub[int(st)] = ub;
             }
         }
     }
@@ -1277,17 +1259,17 @@ namespace EProject
 
         auto* deviceContext = dx11Device->getDX11DeviceContext();
 
-        ID3D11Buffer* dxBuf = m_selectedVBO ? m_selectedVBO->m_handle.Get() : nullptr;
-        UINT stride = m_selectedVBO ? m_selectedVBO->m_layout->stride : 0;
+        ID3D11Buffer* dxBuf = m_selectedVBO ? static_cast<DX11GVertexBuffer*>(m_selectedVBO.get())->m_handle.Get() : nullptr;
+        UINT stride = m_selectedVBO ? m_selectedVBO->getLayout()->stride : 0;
         UINT offset = 0;
         deviceContext->IASetVertexBuffers(0, 1, &dxBuf, &stride, &offset);
 
-        dxBuf = m_selectedInstances ? m_selectedInstances->m_handle.Get() : nullptr;
-        stride = m_selectedInstances ? m_selectedInstances->m_layout->stride : 0;
+        dxBuf = m_selectedInstances ? static_cast<DX11GVertexBuffer*>(m_selectedInstances.get())->m_handle.Get() : nullptr;
+        stride = m_selectedInstances ? m_selectedInstances->getLayout()->stride : 0;
         offset = 0;
         deviceContext->IASetVertexBuffers(1, 1, &dxBuf, &stride, &offset);
 
-        dxBuf = m_selectedIBO ? m_selectedIBO->m_handle.Get() : nullptr;
+        dxBuf = m_selectedIBO ? static_cast<DX11GIndexBuffer*>(m_selectedIBO.get())->m_handle.Get() : nullptr;
         deviceContext->IASetIndexBuffer(dxBuf, DXGI_FORMAT_R32_UINT, 0);
 
         const Layout* vl = m_selectedVBO ? m_selectedVBO->getLayout() : nullptr;
@@ -1461,6 +1443,8 @@ namespace EProject
 
     void DX11GUniformBuffer::validateDynamicData()
     {
+        UniformBuffer::validateDynamicData();
+
         D3D11_MAPPED_SUBRESOURCE map_res = {};
 
         auto* dx11Device = static_cast<DX11GDevice*>(m_device->getDeviceImpl().get());
